@@ -2,22 +2,22 @@ import { andesnovaDocs } from "../data/andesnovaDocs.js";
 
 const ALLOWED_ORIGINS = [
   "https://oprbguitar.github.io",
-  "https://oprbguitar.github.io/AndesNova",
   "http://localhost:5173",
   "http://localhost:3000",
   "https://andesnova-chat-api.vercel.app",
 ];
 
 const DEFAULT_ALLOWED_ORIGIN = "https://oprbguitar.github.io";
-const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+const DEFAULT_MODEL = "gemini-1.5-flash";
+const MODEL_FALLBACKS = ["gemini-2.0-flash", "gemini-2.5-flash"];
 const MAX_MESSAGE_CHARS = 4000;
 const MAX_HISTORY_CHARS = 700;
 const FALLBACK_ANSWER =
-  "No pude generar una respuesta en este momento. Puede solicitar una evaluación inicial para revisar el caso.";
+  "No pude generar una respuesta en este momento. Podemos iniciar con una evaluación inicial para revisar su caso.";
 const FALLBACK_DOC_IDS = [
-  "doc-perfil-andesnova",
-  "doc-documentos-cliente",
-  "doc-evaluacion-inicial",
+  "perfil-andesnova",
+  "evaluacion-inicial",
+  "contacto-especialista",
 ];
 
 const ASSISTANT_BEHAVIOR = `
@@ -29,25 +29,19 @@ Tone:
 - formal but conversational;
 - practical;
 - direct;
-- client-oriented;
 - concise;
-- no robotic lists unless the user requests a detailed breakdown.
+- client-oriented.
 
-Response rules:
-1. Always answer in Spanish.
-2. Keep most answers between 60 and 130 words.
-3. Do not write long lists by default.
-4. Do not show prices.
-5. Do not mention staff names.
-6. Do not invent real clients.
-7. Do not claim final legal, medical, financial or occupational conclusions.
-8. If the user gives a case, identify the likely need and suggest one practical first step.
-9. Ask only one follow-up question when needed.
-10. If the case needs expert review, recommend an initial evaluation.
-11. Do not mention Gemini, prompts, backend, API or technical implementation.
-12. Do not say "segun la base de conocimiento" unless the user asks for sources.
-13. Avoid large numbered lists. Use short paragraphs.
-14. If useful, close with a soft question like: "¿Desea que lo oriente con los documentos que debería preparar?"
+Rules:
+- Always answer in Spanish, usually between 60 and 130 words.
+- Do not show prices.
+- Do not mention staff names.
+- Do not invent real clients.
+- Do not claim final legal, medical, financial or occupational conclusions.
+- If the user gives a case, identify the likely need and suggest one practical first step.
+- Ask only one follow-up question when useful.
+- Recommend an initial evaluation when specialist review is needed.
+- Do not mention Gemini, backend, API, prompt, or technical implementation.
 `;
 
 function getCorsHeaders(origin = "") {
@@ -110,31 +104,48 @@ function normalizeHistory(history) {
     .join("\n");
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function keywordMatches(normalizedMessage, keyword) {
+  const normalizedKeyword = keyword.toLowerCase();
+
+  if (normalizedKeyword.length <= 3 && !normalizedKeyword.includes(" ")) {
+    return new RegExp(`\\b${escapeRegExp(normalizedKeyword)}\\b`, "i").test(normalizedMessage);
+  }
+
+  return normalizedMessage.includes(normalizedKeyword);
+}
+
 function selectRelevantDocs(message) {
   const normalized = message.toLowerCase();
-  const selectedDocs = andesnovaDocs
-    .map((doc) => {
-      const score = doc.keywords.reduce((total, keyword) => {
-        return normalized.includes(keyword.toLowerCase()) ? total + 1 : total;
-      }, 0);
+  const scored = andesnovaDocs.map((doc) => {
+    const score = doc.keywords.reduce((total, keyword) => {
+      return keywordMatches(normalized, keyword) ? total + 1 : total;
+    }, 0);
 
-      return { ...doc, score };
-    })
+    return { ...doc, score };
+  });
+
+  const selected = scored
     .filter((doc) => doc.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
 
-  if (selectedDocs.length > 0) {
-    return selectedDocs;
+  if (selected.length > 0) {
+    return selected;
   }
 
-  return FALLBACK_DOC_IDS.map((id) => andesnovaDocs.find((doc) => doc.id === id)).filter(Boolean);
+  return andesnovaDocs
+    .filter((doc) => FALLBACK_DOC_IDS.includes(doc.id))
+    .slice(0, 3);
 }
 
 function formatSelectedDocs(selectedDocs) {
   return selectedDocs
-    .map(
-      (doc) => `
+    .map((doc) => {
+      return `
 Documento: ${doc.title}
 Categoría: ${doc.category}
 Servicio recomendado: ${doc.recommendedService}
@@ -142,8 +153,8 @@ Contenido:
 ${doc.content}
 Siguiente paso sugerido:
 ${doc.suggestedNextStep}
-`
-    )
+`;
+    })
     .join("\n---\n");
 }
 
@@ -166,37 +177,72 @@ ${message}
 `;
 }
 
-async function callGemini(prompt) {
-  const response = await fetch(GEMINI_ENDPOINT, {
+function getModelList() {
+  const configuredModel = process.env.GEMINI_MODEL || DEFAULT_MODEL;
+  return [configuredModel, ...MODEL_FALLBACKS.filter((model) => model !== configuredModel)];
+}
+
+async function requestGemini(prompt, model) {
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+  const requestBody = {
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            text: prompt,
+          },
+        ],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.35,
+      maxOutputTokens: 350,
+    },
+  };
+
+  console.log("Gemini model selected:", model);
+
+  const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: prompt }],
-        },
-      ],
-      generationConfig: {
-        temperature: 0.35,
-        maxOutputTokens: 350,
-        thinkingConfig: {
-          thinkingBudget: 0,
-        },
-      },
-    }),
+    body: JSON.stringify(requestBody),
   });
+
+  console.log("Gemini response status:", response.status);
 
   if (!response.ok) {
     const errorText = await response.text();
     console.error("Gemini API error:", errorText);
-    throw new Error("GEMINI_REQUEST_FAILED");
+    const error = new Error("GEMINI_REQUEST_FAILED");
+    error.status = response.status;
+    error.body = errorText;
+    error.model = model;
+    throw error;
   }
 
   const data = await response.json();
   return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || FALLBACK_ANSWER;
+}
+
+async function callGemini(prompt) {
+  let lastError;
+
+  for (const model of getModelList()) {
+    try {
+      return await requestGemini(prompt, model);
+    } catch (error) {
+      lastError = error;
+
+      if (error.status !== 404) {
+        break;
+      }
+    }
+  }
+
+  throw lastError || new Error("GEMINI_REQUEST_FAILED");
 }
 
 export default async function handler(req, res) {
@@ -211,25 +257,37 @@ export default async function handler(req, res) {
     return res.status(200).json({
       status: "ok",
       message: "AndesNova Chat API is active",
+      geminiKeyConfigured: Boolean(process.env.GEMINI_API_KEY),
       endpoint: "POST /api/chat",
     });
   }
 
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed." });
+    return res.status(405).json({
+      error: "Method not allowed.",
+      details: "Use GET, POST, or OPTIONS.",
+    });
   }
 
   try {
+    console.log("POST /api/chat received");
+    console.log("GEMINI_API_KEY exists:", Boolean(process.env.GEMINI_API_KEY));
+
     const body = normalizeBody(req.body);
     const message = truncateText(body.message, MAX_MESSAGE_CHARS);
+    console.log("Message length:", message.length);
 
     if (!message) {
-      return res.status(400).json({ error: "The message is empty." });
+      return res.status(400).json({
+        error: "The message is empty.",
+        details: "Send a non-empty message string in the request body.",
+      });
     }
 
     if (!process.env.GEMINI_API_KEY) {
       return res.status(500).json({
         error: "GEMINI_API_KEY is not configured in Vercel.",
+        details: "Add GEMINI_API_KEY in Vercel Environment Variables and redeploy.",
       });
     }
 
@@ -246,11 +304,13 @@ export default async function handler(req, res) {
     if (error.message === "GEMINI_REQUEST_FAILED") {
       return res.status(502).json({
         error: "Could not get a response from the AI model.",
+        details: `Model request failed${error.status ? ` with status ${error.status}` : ""}.`,
       });
     }
 
     return res.status(500).json({
       error: "Internal error while processing the request.",
+      details: "Unexpected server error.",
     });
   }
 }

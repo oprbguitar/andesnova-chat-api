@@ -37,6 +37,7 @@ Expected response:
 {
   "status": "ok",
   "message": "AndesNova Chat API is active",
+  "geminiKeyConfigured": true,
   "endpoint": "POST /api/chat"
 }
 ```
@@ -63,6 +64,19 @@ Expected response:
 ```
 
 `POST /api/chat` devuelve respuestas cortas, naturales y orientadas al caso del cliente. El frontend puede ignorar `sources` si no necesita mostrar las referencias internas.
+
+## Troubleshooting
+
+If the chatbot shows the fallback message, check Vercel Logs first.
+
+Confirm:
+
+- `GEMINI_API_KEY` exists in Vercel Environment Variables.
+- `GET /api/chat` returns `geminiKeyConfigured: true`.
+- `POST /api/chat` returns a JSON response with `answer`.
+- The browser origin is allowed by CORS, especially `https://oprbguitar.github.io`.
+
+Errors from `/api/chat` are returned as JSON with `error` and a short safe `details` field.
 
 ## Deploy On Vercel
 

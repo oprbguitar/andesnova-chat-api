@@ -1,6 +1,6 @@
 export const andesnovaDocs = [
   {
-    id: "doc-perfil-andesnova",
+    id: "perfil-andesnova",
     title: "Perfil de AndesNova",
     category: "Institucional",
     keywords: [
@@ -51,8 +51,8 @@ export const andesnovaDocs = [
     `,
   },
   {
-    id: "doc-mejora-procesos",
-    title: "Consultoría administrativa y mejora de procesos",
+    id: "mejora-procesos",
+    title: "Mejora de procesos",
     category: "Servicio",
     keywords: [
       "procesos",
@@ -78,8 +78,8 @@ export const andesnovaDocs = [
     `,
   },
   {
-    id: "doc-sst",
-    title: "Seguridad y Salud en el Trabajo",
+    id: "sst",
+    title: "SST",
     category: "Servicio",
     keywords: [
       "sst",
@@ -106,7 +106,7 @@ export const andesnovaDocs = [
     `,
   },
   {
-    id: "doc-logistica-contrataciones",
+    id: "logistica-contrataciones",
     title: "Logística y contrataciones",
     category: "Servicio",
     keywords: [
@@ -134,7 +134,7 @@ export const andesnovaDocs = [
     `,
   },
   {
-    id: "doc-cumplimiento-contractual",
+    id: "cumplimiento-contractual",
     title: "Cumplimiento legal y control contractual",
     category: "Servicio",
     keywords: [
@@ -161,7 +161,7 @@ export const andesnovaDocs = [
     `,
   },
   {
-    id: "doc-tecnologia-ia",
+    id: "tecnologia-ia-documental",
     title: "Tecnología e IA documental",
     category: "Servicio",
     keywords: [
@@ -188,7 +188,7 @@ export const andesnovaDocs = [
     `,
   },
   {
-    id: "doc-reportes-dashboards",
+    id: "reportes-dashboards",
     title: "Reportes y dashboards",
     category: "Servicio",
     keywords: [
@@ -215,7 +215,7 @@ export const andesnovaDocs = [
     `,
   },
   {
-    id: "doc-capacitacion",
+    id: "capacitacion-empresarial",
     title: "Capacitación empresarial",
     category: "Servicio",
     keywords: [
@@ -241,8 +241,8 @@ export const andesnovaDocs = [
     `,
   },
   {
-    id: "doc-contactar-especialista",
-    title: "Cuándo contactar a un especialista",
+    id: "contacto-especialista",
+    title: "Contacto con especialista",
     category: "Criterio",
     keywords: [
       "especialista",
@@ -269,7 +269,7 @@ export const andesnovaDocs = [
     `,
   },
   {
-    id: "doc-documentos-cliente",
+    id: "documentos-cliente",
     title: "Qué documentos debe preparar un cliente",
     category: "Orientacion",
     keywords: [
@@ -295,8 +295,8 @@ export const andesnovaDocs = [
     `,
   },
   {
-    id: "doc-evaluacion-inicial",
-    title: "Cómo iniciar una evaluación inicial",
+    id: "evaluacion-inicial",
+    title: "Evaluación inicial",
     category: "Proceso",
     keywords: [
       "evaluacion inicial",
@@ -307,6 +307,9 @@ export const andesnovaDocs = [
       "diagnostico",
       "reunion",
       "primer paso",
+      "pasos iniciales",
+      "pasos",
+      "iniciales",
       "cotizar",
       "propuesta",
     ],
