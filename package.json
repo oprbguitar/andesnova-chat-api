@@ -1,0 +1,16 @@
+{
+  "name": "andesnova-chat-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "lint": "node --check api/chat.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "vercel": "^34.0.0"
+  }
+}
