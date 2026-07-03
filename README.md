@@ -1,65 +1,65 @@
 # AndesNova Chat API
 
-API serverless mínima para el chatbot flotante de AndesNova IA+.
+Backend serverless de Vercel para el chatbot empresarial AndesNova IA+ del portal AndesNova Consultores S.A.C.
 
-## Endpoint
+Production URL:
 
-`POST /api/chat`
+```text
+https://andesnova-chat-api.vercel.app/
+```
 
-Request:
+Main endpoint:
+
+```text
+https://andesnova-chat-api.vercel.app/api/chat
+```
+
+## Environment Variable
+
+The Gemini API key must be configured in Vercel Environment Variables:
+
+```text
+GEMINI_API_KEY
+```
+
+Do not place the API key in the codebase or in this README.
+
+## GET Test
+
+```powershell
+Invoke-RestMethod -Uri "https://andesnova-chat-api.vercel.app/api/chat" -Method GET
+```
+
+Expected response:
 
 ```json
 {
-  "message": "Necesito ordenar contratos y controlar vencimientos",
-  "history": []
+  "status": "ok",
+  "message": "AndesNova Chat API is active",
+  "endpoint": "POST /api/chat"
 }
 ```
 
-Response:
+## POST Test
+
+```powershell
+Invoke-RestMethod -Uri "https://andesnova-chat-api.vercel.app/api/chat" `
+  -Method POST `
+  -Headers @{ "Content-Type" = "application/json" } `
+  -Body '{"message":"Tengo contratos desordenados y proveedores sin control"}'
+```
+
+Expected response:
 
 ```json
 {
-  "answer": "Respuesta generada por AndesNova IA+"
+  "answer": "AndesNova IA+ answer"
 }
 ```
 
-## Variables de entorno
+## Deploy On Vercel
 
-Configura la clave de Gemini en Vercel:
-
-```bash
-GEMINI_API_KEY=tu_clave_de_gemini
-```
-
-El endpoint usa el modelo `gemini-1.5-flash`.
-
-## Desarrollo local
-
-```bash
-npm install
-npm run dev
-```
-
-Prueba local:
-
-```bash
-curl -X POST http://localhost:3000/api/chat \
-  -H "Content-Type: application/json" \
-  -d "{\"message\":\"Quiero organizar documentos dispersos\",\"history\":[]}"
-```
-
-## Deploy en Vercel
-
-1. Importa este repositorio en Vercel.
-2. Agrega `GEMINI_API_KEY` en Project Settings > Environment Variables.
-3. Despliega el proyecto.
-4. Usa la URL pública de Vercel desde el frontend de AndesNova.
-
-## CORS
-
-La API acepta solicitudes desde:
-
-- `https://oprbguitar.github.io`
-- `http://localhost:5173`
-
-También responde preflight `OPTIONS` para `POST /api/chat`.
+1. Import this repository in Vercel.
+2. Configure `GEMINI_API_KEY` in Project Settings > Environment Variables.
+3. Deploy the project.
+4. Confirm that `/` shows the status page and `/api/chat` responds to GET and POST.
