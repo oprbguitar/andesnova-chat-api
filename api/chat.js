@@ -4,7 +4,7 @@ const ALLOWED_ORIGINS = [
 ];
 
 const DEFAULT_ALLOWED_ORIGIN = "https://oprbguitar.github.io";
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+const GEMINI_MODEL = "gemini-1.5-flash";
 
 const SYSTEM_PROMPT = `
 Eres AndesNova IA+, asistente empresarial de AndesNova Consultores S.A.C.

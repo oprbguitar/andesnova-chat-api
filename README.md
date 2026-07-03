@@ -31,11 +31,7 @@ Configura la clave de Gemini en Vercel:
 GEMINI_API_KEY=tu_clave_de_gemini
 ```
 
-Opcionalmente puedes cambiar el modelo:
-
-```bash
-GEMINI_MODEL=gemini-1.5-flash
-```
+El endpoint usa el modelo `gemini-1.5-flash`.
 
 ## Desarrollo local
 
