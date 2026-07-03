@@ -24,7 +24,7 @@ export const andesnovaDocs = [
   },
   {
     id: "doc-gestion-documental",
-    title: "Gestion documental empresarial",
+    title: "Gestión documental empresarial",
     category: "Servicio",
     keywords: [
       "documentos",
@@ -38,7 +38,7 @@ export const andesnovaDocs = [
       "trazabilidad",
       "documental",
     ],
-    recommendedService: "Gestion documental empresarial",
+    recommendedService: "Gestión documental empresarial",
     suggestedNextStep:
       "Solicitar una evaluacion inicial para revisar el volumen documental y definir una estructura de archivo.",
     content: `
@@ -52,7 +52,7 @@ export const andesnovaDocs = [
   },
   {
     id: "doc-mejora-procesos",
-    title: "Consultoria administrativa y mejora de procesos",
+    title: "Consultoría administrativa y mejora de procesos",
     category: "Servicio",
     keywords: [
       "procesos",
@@ -66,7 +66,7 @@ export const andesnovaDocs = [
       "administrativo",
       "mejora",
     ],
-    recommendedService: "Consultoria administrativa y mejora de procesos",
+    recommendedService: "Consultoría administrativa y mejora de procesos",
     suggestedNextStep:
       "Levantar el flujo actual con usuarios clave para detectar demoras, responsables y puntos de aprobacion.",
     content: `
@@ -107,7 +107,7 @@ export const andesnovaDocs = [
   },
   {
     id: "doc-logistica-contrataciones",
-    title: "Logistica y contrataciones",
+    title: "Logística y contrataciones",
     category: "Servicio",
     keywords: [
       "logistica",
@@ -122,7 +122,7 @@ export const andesnovaDocs = [
       "requerimientos",
       "procura",
     ],
-    recommendedService: "Logistica y contrataciones",
+    recommendedService: "Logística y contrataciones",
     suggestedNextStep:
       "Listar proveedores, revisar ordenes y verificar conformidades para ubicar brechas de trazabilidad.",
     content: `
@@ -162,7 +162,7 @@ export const andesnovaDocs = [
   },
   {
     id: "doc-tecnologia-ia",
-    title: "Tecnologia e IA documental",
+    title: "Tecnología e IA documental",
     category: "Servicio",
     keywords: [
       "tecnologia",
@@ -176,7 +176,7 @@ export const andesnovaDocs = [
       "prototipo",
       "sistema",
     ],
-    recommendedService: "Tecnologia e IA documental",
+    recommendedService: "Tecnología e IA documental",
     suggestedNextStep:
       "Definir documentos, usuarios, preguntas frecuentes y casos de prueba antes de construir una solucion digital.",
     content: `
@@ -216,7 +216,7 @@ export const andesnovaDocs = [
   },
   {
     id: "doc-capacitacion",
-    title: "Capacitacion empresarial",
+    title: "Capacitación empresarial",
     category: "Servicio",
     keywords: [
       "capacitacion",
@@ -230,7 +230,7 @@ export const andesnovaDocs = [
       "adopcion",
       "materiales",
     ],
-    recommendedService: "Capacitacion empresarial",
+    recommendedService: "Capacitación empresarial",
     suggestedNextStep:
       "Identificar necesidades, publico objetivo y temas prioritarios para preparar una sesion aplicable al trabajo diario.",
     content: `
@@ -242,7 +242,7 @@ export const andesnovaDocs = [
   },
   {
     id: "doc-contactar-especialista",
-    title: "Cuando contactar a un especialista",
+    title: "Cuándo contactar a un especialista",
     category: "Criterio",
     keywords: [
       "especialista",
@@ -270,7 +270,7 @@ export const andesnovaDocs = [
   },
   {
     id: "doc-documentos-cliente",
-    title: "Que documentos debe preparar un cliente",
+    title: "Qué documentos debe preparar un cliente",
     category: "Orientacion",
     keywords: [
       "documentos preparar",
@@ -296,7 +296,7 @@ export const andesnovaDocs = [
   },
   {
     id: "doc-evaluacion-inicial",
-    title: "Como iniciar una evaluacion inicial",
+    title: "Cómo iniciar una evaluación inicial",
     category: "Proceso",
     keywords: [
       "evaluacion inicial",
