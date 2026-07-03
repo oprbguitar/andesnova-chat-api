@@ -1,6 +1,7 @@
 # AndesNova Chat API
 
 Backend serverless de Vercel para el chatbot empresarial AndesNova IA+ del portal AndesNova Consultores S.A.C.
+Las respuestas se generan con documentacion interna estructurada del backend, seleccionando solo los documentos mas relevantes para cada consulta.
 
 Production URL:
 
@@ -53,9 +54,15 @@ Expected response:
 
 ```json
 {
-  "answer": "AndesNova IA+ answer"
+  "answer": "Respuesta breve y natural de AndesNova IA+",
+  "sources": [
+    "Cumplimiento legal y control contractual",
+    "Logistica y contrataciones"
+  ]
 }
 ```
+
+`POST /api/chat` devuelve respuestas cortas, naturales y orientadas al caso del cliente. El frontend puede ignorar `sources` si no necesita mostrar las referencias internas.
 
 ## Deploy On Vercel
 
