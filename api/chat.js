@@ -9,7 +9,7 @@ const ALLOWED_ORIGINS = [
 
 const DEFAULT_ALLOWED_ORIGIN = "https://oprbguitar.github.io";
 const DEFAULT_MODEL = "gemini-1.5-flash";
-const MODEL_FALLBACKS = ["gemini-2.0-flash", "gemini-2.5-flash"];
+const MODEL_FALLBACKS = ["gemini-2.5-flash", "gemini-2.0-flash"];
 const MAX_MESSAGE_CHARS = 4000;
 const MAX_HISTORY_CHARS = 700;
 const FALLBACK_ANSWER =
@@ -201,6 +201,12 @@ async function requestGemini(prompt, model) {
     },
   };
 
+  if (model.startsWith("gemini-2.5")) {
+    requestBody.generationConfig.thinkingConfig = {
+      thinkingBudget: 0,
+    };
+  }
+
   console.log("Gemini model selected:", model);
 
   const response = await fetch(endpoint, {
@@ -236,7 +242,7 @@ async function callGemini(prompt) {
     } catch (error) {
       lastError = error;
 
-      if (error.status !== 404) {
+      if (![404, 429].includes(error.status)) {
         break;
       }
     }
