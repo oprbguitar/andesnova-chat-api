@@ -7,7 +7,7 @@ const ALLOWED_ORIGINS = [
 ];
 
 const DEFAULT_ALLOWED_ORIGIN = "https://oprbguitar.github.io";
-const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
 const MAX_MESSAGE_CHARS = 4000;
 const MAX_HISTORY_CHARS = 700;
 const FALLBACK_ANSWER =
