@@ -178,6 +178,23 @@ ${message}
 `;
 }
 
+function buildLocalAnswer(selectedDocs) {
+  const primaryDoc = selectedDocs[0];
+  const secondaryDoc = selectedDocs.find(
+    (doc) => doc.category === "Servicio" && doc.id !== primaryDoc?.id
+  );
+
+  if (!primaryDoc) {
+    return FALLBACK_ANSWER;
+  }
+
+  const services = secondaryDoc
+    ? `${primaryDoc.recommendedService} y ${secondaryDoc.recommendedService}`
+    : primaryDoc.recommendedService;
+
+  return `Por lo que indica, la necesidad principal parece relacionarse con ${primaryDoc.title.toLowerCase()}. En AndesNova esto puede abordarse con ${services}. Como primer paso, ${primaryDoc.suggestedNextStep.charAt(0).toLowerCase()}${primaryDoc.suggestedNextStep.slice(1)} ¿Desea que lo oriente con los documentos que debería preparar?`;
+}
+
 function getModelList() {
   const configuredModel = process.env.GEMINI_MODEL || DEFAULT_MODEL;
   return [configuredModel, ...MODEL_FALLBACKS.filter((model) => model !== configuredModel)];
@@ -299,7 +316,17 @@ export default async function handler(req, res) {
     }
 
     const selectedDocs = selectRelevantDocs(message);
-    const answer = await callGemini(buildPrompt(message, body.history, selectedDocs));
+    let answer;
+
+    try {
+      answer = await callGemini(buildPrompt(message, body.history, selectedDocs));
+    } catch (error) {
+      console.error("Using local document answer fallback:", {
+        status: error.status,
+        model: error.model,
+      });
+      answer = buildLocalAnswer(selectedDocs);
+    }
 
     return res.status(200).json({
       answer,
