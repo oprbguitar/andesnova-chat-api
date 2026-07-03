@@ -2,6 +2,7 @@ import { andesnovaDocs } from "../data/andesnovaDocs.js";
 
 const ALLOWED_ORIGINS = [
   "https://oprbguitar.github.io",
+  "https://andesnova.vercel.app",
   "http://localhost:5173",
   "http://localhost:3000",
   "https://andesnova-chat-api.vercel.app",
