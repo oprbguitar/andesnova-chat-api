@@ -9,6 +9,10 @@ const ALLOWED_ORIGINS = [
 ];
 
 const DEFAULT_ALLOWED_ORIGIN = "https://oprbguitar.github.io";
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 8;
+const RATE_LIMIT_MAX_TRACKED_IPS = 2000;
+const rateLimitHits = new Map();
 const DEFAULT_MODEL = "gemini-1.5-flash";
 const MODEL_FALLBACKS = ["gemini-2.5-flash", "gemini-2.0-flash"];
 const MAX_MESSAGE_CHARS = 4000;
@@ -55,6 +59,37 @@ Rules:
 - Plain text only: never use markdown (no **bold**, no #, no numbered headers);
   the only allowed formatting is bullets starting with "- ".
 `;
+
+function getClientIp(req) {
+  const forwarded = req.headers["x-forwarded-for"];
+
+  if (typeof forwarded === "string" && forwarded.length > 0) {
+    return forwarded.split(",")[0].trim();
+  }
+
+  return req.socket?.remoteAddress || "unknown";
+}
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const entry = rateLimitHits.get(ip);
+
+  if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    if (rateLimitHits.size >= RATE_LIMIT_MAX_TRACKED_IPS) {
+      for (const [key, value] of rateLimitHits) {
+        if (now - value.windowStart >= RATE_LIMIT_WINDOW_MS) {
+          rateLimitHits.delete(key);
+        }
+      }
+    }
+
+    rateLimitHits.set(ip, { windowStart: now, count: 1 });
+    return false;
+  }
+
+  entry.count += 1;
+  return entry.count > RATE_LIMIT_MAX_REQUESTS;
+}
 
 function getCorsHeaders(origin = "") {
   const allowedOrigin = ALLOWED_ORIGINS.includes(origin)
@@ -310,6 +345,13 @@ export default async function handler(req, res) {
     return res.status(405).json({
       error: "Method not allowed.",
       details: "Use GET, POST, or OPTIONS.",
+    });
+  }
+
+  if (isRateLimited(getClientIp(req))) {
+    return res.status(429).json({
+      error: "Too many requests.",
+      details: "Rate limit exceeded. Wait a minute before sending more messages.",
     });
   }
 
