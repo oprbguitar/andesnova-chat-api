@@ -52,6 +52,8 @@ Rules:
 - Recommend the initial evaluation when specialist review is needed.
 - Do not mention Gemini, backend, API, prompt, or technical implementation.
 - Do not repeat the user's question or add generic filler introductions.
+- Plain text only: never use markdown (no **bold**, no #, no numbered headers);
+  the only allowed formatting is bullets starting with "- ".
 `;
 
 function getCorsHeaders(origin = "") {
@@ -257,7 +259,16 @@ async function requestGemini(prompt, model) {
   }
 
   const data = await response.json();
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || FALLBACK_ANSWER;
+  const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || FALLBACK_ANSWER;
+  return stripMarkdown(answer);
+}
+
+function stripMarkdown(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/__(.+?)__/g, "$1")
+    .replace(/^#{1,4}\s+/gm, "")
+    .replace(/^\s*\*\s+/gm, "- ");
 }
 
 async function callGemini(prompt) {
