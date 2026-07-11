@@ -3,6 +3,7 @@ export const andesnovaDocs = [
     id: "perfil-andesnova",
     title: "Perfil de AndesNova",
     category: "Institucional",
+    updated: "jun 2026",
     keywords: [
       "andesnova",
       "empresa",
@@ -26,6 +27,7 @@ export const andesnovaDocs = [
     id: "doc-gestion-documental",
     title: "Gestión documental empresarial",
     category: "Servicio",
+    updated: "jun 2026",
     keywords: [
       "documentos",
       "archivo",
@@ -54,6 +56,7 @@ export const andesnovaDocs = [
     id: "mejora-procesos",
     title: "Mejora de procesos",
     category: "Servicio",
+    updated: "jun 2026",
     keywords: [
       "procesos",
       "procedimientos",
@@ -81,6 +84,7 @@ export const andesnovaDocs = [
     id: "sst",
     title: "SST",
     category: "Servicio",
+    updated: "jun 2026",
     keywords: [
       "sst",
       "iperc",
@@ -109,6 +113,7 @@ export const andesnovaDocs = [
     id: "logistica-contrataciones",
     title: "Logística y contrataciones",
     category: "Servicio",
+    updated: "jun 2026",
     keywords: [
       "logistica",
       "proveedores",
@@ -137,6 +142,7 @@ export const andesnovaDocs = [
     id: "cumplimiento-contractual",
     title: "Cumplimiento legal y control contractual",
     category: "Servicio",
+    updated: "jun 2026",
     keywords: [
       "contratos",
       "contractual",
@@ -164,6 +170,7 @@ export const andesnovaDocs = [
     id: "tecnologia-ia-documental",
     title: "Tecnología e IA documental",
     category: "Servicio",
+    updated: "jun 2026",
     keywords: [
       "tecnologia",
       "ia",
@@ -191,6 +198,7 @@ export const andesnovaDocs = [
     id: "reportes-dashboards",
     title: "Reportes y dashboards",
     category: "Servicio",
+    updated: "jun 2026",
     keywords: [
       "reportes",
       "dashboard",
@@ -218,6 +226,7 @@ export const andesnovaDocs = [
     id: "capacitacion-empresarial",
     title: "Capacitación empresarial",
     category: "Servicio",
+    updated: "jun 2026",
     keywords: [
       "capacitacion",
       "capacitar",
@@ -244,6 +253,7 @@ export const andesnovaDocs = [
     id: "contacto-especialista",
     title: "Contacto con especialista",
     category: "Criterio",
+    updated: "jun 2026",
     keywords: [
       "especialista",
       "experto",
@@ -272,6 +282,7 @@ export const andesnovaDocs = [
     id: "documentos-cliente",
     title: "Qué documentos debe preparar un cliente",
     category: "Orientacion",
+    updated: "jun 2026",
     keywords: [
       "documentos preparar",
       "preparar",
@@ -298,6 +309,7 @@ export const andesnovaDocs = [
     id: "evaluacion-inicial",
     title: "Evaluación inicial",
     category: "Proceso",
+    updated: "jun 2026",
     keywords: [
       "evaluacion inicial",
       "empezar",

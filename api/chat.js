@@ -298,6 +298,17 @@ async function requestGemini(prompt, model) {
   return stripMarkdown(answer);
 }
 
+function summarizeDocContent(content) {
+  const normalized = (content || "").replace(/\s+/g, " ").trim();
+
+  if (normalized.length <= 180) {
+    return normalized;
+  }
+
+  const cut = normalized.slice(0, 180);
+  return `${cut.slice(0, cut.lastIndexOf(" "))}…`;
+}
+
 function stripMarkdown(text) {
   return text
     .replace(/\*\*(.+?)\*\*/g, "$1")
@@ -392,7 +403,12 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       answer,
-      sources: selectedDocs.map((doc) => doc.title),
+      sources: selectedDocs.map((doc) => ({
+        title: doc.title,
+        category: doc.category,
+        updated: doc.updated || "2026",
+        description: summarizeDocContent(doc.content),
+      })),
     });
   } catch (error) {
     console.error(error);
