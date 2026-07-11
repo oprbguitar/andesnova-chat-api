@@ -13,8 +13,8 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 8;
 const RATE_LIMIT_MAX_TRACKED_IPS = 2000;
 const rateLimitHits = new Map();
-const DEFAULT_MODEL = "gemini-1.5-flash";
-const MODEL_FALLBACKS = ["gemini-2.5-flash", "gemini-2.0-flash"];
+const DEFAULT_MODEL = "gemini-2.5-flash-lite";
+const MODEL_FALLBACKS = ["gemini-2.5-flash", "gemini-2.0-flash-lite"];
 const MAX_MESSAGE_CHARS = 4000;
 const MAX_HISTORY_CHARS = 700;
 const FALLBACK_ANSWER =
@@ -24,6 +24,15 @@ const FALLBACK_DOC_IDS = [
   "evaluacion-inicial",
   "contacto-especialista",
 ];
+
+const SMALL_TALK_PATTERN =
+  /^(hola+|buenas|buenos dias|buenos días|buenas tardes|buenas noches|hey|hi|hello|saludos|gracias|muchas gracias|ok+|okey|vale|ya|si|sí|no|listo|genial|perfecto|de acuerdo|adios|adiós|chau|hasta luego)[!?¡¿.,\s]*$/i;
+
+const SMALL_TALK_ANSWER =
+  "¡Hola! Soy AndesNova IA+. Cuéntame brevemente tu caso para darte una recomendación ejecutiva: por ejemplo, documentos desordenados, contratos por vencer, demoras en procesos, SST, logística o reportes de gestión.";
+
+const QUOTA_NOTE =
+  "Nuestro asistente IA alcanzó su límite de consultas por hoy, así que te oriento directamente con la documentación interna:\n\n";
 
 const ASSISTANT_BEHAVIOR = `
 You are AndesNova IA+, an executive business assistant for AndesNova Consultores S.A.C.
@@ -56,6 +65,9 @@ Rules:
 - Recommend the initial evaluation when specialist review is needed.
 - Do not mention Gemini, backend, API, prompt, or technical implementation.
 - Do not repeat the user's question or add generic filler introductions.
+- Never repeat a previous assistant answer. When the conversation continues on the
+  same topic, deepen it with new specifics: documents to prepare, risks to weigh,
+  decision criteria or a more concrete action plan.
 - Plain text only: never use markdown (no **bold**, no #, no numbered headers);
   the only allowed formatting is bullets starting with "- ".
 `;
@@ -165,11 +177,20 @@ function keywordMatches(normalizedMessage, keyword) {
   return normalizedMessage.includes(normalizedKeyword);
 }
 
-function selectRelevantDocs(message) {
+function selectRelevantDocs(message, userHistoryText = "") {
   const normalized = message.toLowerCase();
+  const normalizedHistory = userHistoryText.toLowerCase();
   const scored = andesnovaDocs.map((doc) => {
     const score = doc.keywords.reduce((total, keyword) => {
-      return keywordMatches(normalized, keyword) ? total + 1 : total;
+      if (keywordMatches(normalized, keyword)) {
+        return total + 3;
+      }
+
+      if (normalizedHistory && keywordMatches(normalizedHistory, keyword)) {
+        return total + 1;
+      }
+
+      return total;
     }, 0);
 
     return { ...doc, score };
@@ -224,21 +245,22 @@ ${message}
 `;
 }
 
-function buildLocalAnswer(selectedDocs) {
+function buildLocalAnswer(selectedDocs, { quotaExceeded = false } = {}) {
   const primaryDoc = selectedDocs[0];
-  const secondaryDoc = selectedDocs.find(
-    (doc) => doc.category === "Servicio" && doc.id !== primaryDoc?.id
-  );
 
   if (!primaryDoc) {
     return FALLBACK_ANSWER;
   }
 
-  const services = secondaryDoc
-    ? `${primaryDoc.recommendedService} y ${secondaryDoc.recommendedService}`
-    : primaryDoc.recommendedService;
+  const summary = summarizeDocContent(primaryDoc.content);
+  const note = quotaExceeded ? QUOTA_NOTE : "";
 
-  return `Por lo que indica, la necesidad principal parece relacionarse con ${primaryDoc.title.toLowerCase()}. En AndesNova esto puede abordarse con ${services}. Como primer paso, ${primaryDoc.suggestedNextStep.charAt(0).toLowerCase()}${primaryDoc.suggestedNextStep.slice(1)} ¿Desea que lo oriente con los documentos que debería preparar?`;
+  return (
+    `${note}Sobre ${primaryDoc.title.toLowerCase()}: ${summary}\n\n` +
+    `Recomendación: ${primaryDoc.recommendedService}.\n` +
+    `Siguiente paso: ${primaryDoc.suggestedNextStep}\n\n` +
+    `Si deseas avanzar hoy, usa el botón "Solicitar evaluación" para escalar tu caso con un resumen.`
+  );
 }
 
 function getModelList() {
@@ -388,7 +410,22 @@ export default async function handler(req, res) {
       });
     }
 
-    const selectedDocs = selectRelevantDocs(message);
+    if (SMALL_TALK_PATTERN.test(message)) {
+      return res.status(200).json({
+        answer: SMALL_TALK_ANSWER,
+        sources: [],
+      });
+    }
+
+    const userHistoryText = Array.isArray(body.history)
+      ? body.history
+          .filter((item) => item?.role === "user" && typeof item?.content === "string")
+          .slice(-4)
+          .map((item) => item.content)
+          .join(" ")
+      : "";
+
+    const selectedDocs = selectRelevantDocs(message, userHistoryText);
     let answer;
 
     try {
@@ -398,7 +435,7 @@ export default async function handler(req, res) {
         status: error.status,
         model: error.model,
       });
-      answer = buildLocalAnswer(selectedDocs);
+      answer = buildLocalAnswer(selectedDocs, { quotaExceeded: error.status === 429 });
     }
 
     return res.status(200).json({
