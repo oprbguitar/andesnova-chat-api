@@ -1,6 +1,8 @@
 import { andesnovaDocs } from "../data/andesnovaDocs.js";
 
 const ALLOWED_ORIGINS = [
+  "https://www.andesnova.solutions",
+  "https://andesnova.solutions",
   "https://oprbguitar.github.io",
   "https://andesnova.vercel.app",
   "http://localhost:5173",
