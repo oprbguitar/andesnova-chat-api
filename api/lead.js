@@ -98,7 +98,7 @@ function buildEmailText(lead, origin) {
 async function sendLeadEmail(lead, origin) {
   const apiKey = process.env.RESEND_API_KEY;
   const inbox = process.env.LEAD_INBOX || "peru.labs.pe@gmail.com";
-  const from = process.env.LEAD_FROM || "AndesNova Portal <onboarding@resend.dev>";
+  const from = process.env.LEAD_FROM || "AndesNova Consultas <consultas@andesnova.solutions>";
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
