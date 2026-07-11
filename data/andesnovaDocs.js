@@ -4,6 +4,7 @@ export const andesnovaDocs = [
     title: "Perfil de AndesNova",
     category: "Institucional",
     updated: "jun 2026",
+    version: "1.1.0",
     keywords: [
       "andesnova",
       "empresa",
@@ -32,6 +33,7 @@ export const andesnovaDocs = [
     title: "Gestión documental empresarial",
     category: "Servicio",
     updated: "jun 2026",
+    version: "1.1.0",
     keywords: [
       "documentos",
       "archivo",
@@ -61,6 +63,7 @@ export const andesnovaDocs = [
     title: "Mejora de procesos",
     category: "Servicio",
     updated: "jun 2026",
+    version: "1.1.0",
     keywords: [
       "procesos",
       "procedimientos",
@@ -89,6 +92,7 @@ export const andesnovaDocs = [
     title: "SST",
     category: "Servicio",
     updated: "jun 2026",
+    version: "1.1.0",
     keywords: [
       "sst",
       "iperc",
@@ -118,6 +122,7 @@ export const andesnovaDocs = [
     title: "Logística y contrataciones",
     category: "Servicio",
     updated: "jun 2026",
+    version: "1.1.0",
     keywords: [
       "logistica",
       "proveedores",
@@ -147,6 +152,7 @@ export const andesnovaDocs = [
     title: "Cumplimiento legal y control contractual",
     category: "Servicio",
     updated: "jun 2026",
+    version: "1.1.0",
     keywords: [
       "contratos",
       "contractual",
@@ -175,6 +181,7 @@ export const andesnovaDocs = [
     title: "Tecnología e IA documental",
     category: "Servicio",
     updated: "jun 2026",
+    version: "1.1.0",
     keywords: [
       "tecnologia",
       "ia",
@@ -203,6 +210,7 @@ export const andesnovaDocs = [
     title: "Reportes y dashboards",
     category: "Servicio",
     updated: "jun 2026",
+    version: "1.1.0",
     keywords: [
       "reportes",
       "dashboard",
@@ -231,6 +239,7 @@ export const andesnovaDocs = [
     title: "Capacitación empresarial",
     category: "Servicio",
     updated: "jun 2026",
+    version: "1.1.0",
     keywords: [
       "capacitacion",
       "capacitar",
@@ -258,6 +267,7 @@ export const andesnovaDocs = [
     title: "Contacto con especialista",
     category: "Criterio",
     updated: "jun 2026",
+    version: "1.1.0",
     keywords: [
       "especialista",
       "experto",
@@ -287,6 +297,7 @@ export const andesnovaDocs = [
     title: "Qué documentos debe preparar un cliente",
     category: "Orientacion",
     updated: "jun 2026",
+    version: "1.1.0",
     keywords: [
       "documentos preparar",
       "preparar",
@@ -314,6 +325,7 @@ export const andesnovaDocs = [
     title: "Evaluación inicial",
     category: "Proceso",
     updated: "jun 2026",
+    version: "1.1.0",
     keywords: [
       "evaluacion inicial",
       "empezar",

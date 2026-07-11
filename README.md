@@ -56,14 +56,19 @@ Expected response:
 ```json
 {
   "answer": "Respuesta breve y natural de AndesNova IA+",
-  "sources": [
-    "Cumplimiento legal y control contractual",
-    "Logistica y contrataciones"
+  "evidence": [
+    {
+      "id": "cumplimiento-contractual",
+      "version": "1.1.0",
+      "title": "Cumplimiento legal y control contractual",
+      "excerpt": "Este servicio organiza contratos, obligaciones, vencimientos...",
+      "relevanceScore": 12
+    }
   ]
 }
 ```
 
-`POST /api/chat` devuelve respuestas cortas, naturales y orientadas al caso del cliente. El frontend puede ignorar `sources` si no necesita mostrar las referencias internas.
+`POST /api/chat` devuelve respuestas cortas y orientadas al caso. `evidence` contiene únicamente documentos que superaron el umbral mínimo. Si no existe evidencia suficiente, la API se abstiene, no llama al modelo y devuelve `evidence: []`.
 
 ## Troubleshooting
 

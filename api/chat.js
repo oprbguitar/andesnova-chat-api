@@ -19,10 +19,21 @@ const MAX_MESSAGE_CHARS = 4000;
 const MAX_HISTORY_CHARS = 700;
 const FALLBACK_ANSWER =
   "No pude generar una respuesta en este momento. Podemos iniciar con una evaluación inicial para revisar su caso.";
-const FALLBACK_DOC_IDS = [
-  "perfil-andesnova",
-  "evaluacion-inicial",
-  "contacto-especialista",
+const MIN_RELEVANCE_SCORE = 6;
+const NO_EVIDENCE_ANSWER =
+  "No tengo información suficiente en la documentación disponible para responder con precisión. Puedes reformular la consulta o solicitar una evaluación con un especialista.";
+
+const SYNONYM_GROUPS = [
+  ["documento", "documentos", "archivo", "archivos", "expediente", "expedientes"],
+  ["contrato", "contratos", "contractual", "convenio", "convenios"],
+  ["vencimiento", "vencimientos", "vigencia", "vigencias", "caducidad"],
+  ["proceso", "procesos", "procedimiento", "procedimientos", "flujo", "flujos"],
+  ["demora", "demoras", "retraso", "retrasos", "cuello de botella", "cuellos de botella"],
+  ["seguridad y salud en el trabajo", "sst", "seguridad laboral", "salud ocupacional"],
+  ["inteligencia artificial", "ia", "chatbot", "asistente virtual"],
+  ["tablero", "tableros", "dashboard", "dashboards", "panel de control"],
+  ["capacitacion", "capacitar", "taller", "formacion", "entrenamiento"],
+  ["logistica", "compras", "procura", "abastecimiento"],
 ];
 
 const SMALL_TALK_PATTERN =
@@ -203,8 +214,31 @@ function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+export function normalizeForSearch(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function expandWithSynonyms(value) {
+  const normalizedValue = normalizeForSearch(value);
+  const terms = new Set([normalizedValue]);
+
+  for (const group of SYNONYM_GROUPS) {
+    if (group.some((term) => normalizedValue === normalizeForSearch(term))) {
+      group.forEach((term) => terms.add(normalizeForSearch(term)));
+    }
+  }
+
+  return [...terms];
+}
+
 function keywordMatches(normalizedMessage, keyword) {
-  const normalizedKeyword = keyword.toLowerCase();
+  const normalizedKeyword = normalizeForSearch(keyword);
 
   if (normalizedKeyword.length <= 3 && !normalizedKeyword.includes(" ")) {
     return new RegExp(`\\b${escapeRegExp(normalizedKeyword)}\\b`, "i").test(normalizedMessage);
@@ -213,37 +247,36 @@ function keywordMatches(normalizedMessage, keyword) {
   return normalizedMessage.includes(normalizedKeyword);
 }
 
-function selectRelevantDocs(message, userHistoryText = "") {
-  const normalized = message.toLowerCase();
-  const normalizedHistory = userHistoryText.toLowerCase();
+export function selectRelevantDocs(message, userHistoryText = "") {
+  const normalized = normalizeForSearch(message);
+  const normalizedHistory = normalizeForSearch(userHistoryText);
   const scored = andesnovaDocs.map((doc) => {
-    const score = doc.keywords.reduce((total, keyword) => {
-      if (keywordMatches(normalized, keyword)) {
-        return total + 3;
+    const matchedTerms = new Set();
+    let score = 0;
+
+    for (const keyword of doc.keywords) {
+      const variants = expandWithSynonyms(keyword);
+      const directMatch = variants.find((variant) => keywordMatches(normalized, variant));
+      const historyMatch = variants.find((variant) => normalizedHistory && keywordMatches(normalizedHistory, variant));
+
+      if (directMatch) {
+        matchedTerms.add(normalizeForSearch(keyword));
+        score += directMatch.includes(" ") ? 6 : 3;
+      } else if (historyMatch) {
+        score += historyMatch.includes(" ") ? 2 : 1;
       }
+    }
 
-      if (normalizedHistory && keywordMatches(normalizedHistory, keyword)) {
-        return total + 1;
-      }
-
-      return total;
-    }, 0);
-
-    return { ...doc, score };
+    const hasStrongEvidence = score >= MIN_RELEVANCE_SCORE && (matchedTerms.size >= 2 || score >= 6);
+    return { ...doc, score, matchedTerms: [...matchedTerms], hasStrongEvidence };
   });
 
   const selected = scored
-    .filter((doc) => doc.score > 0)
+    .filter((doc) => doc.hasStrongEvidence)
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
 
-  if (selected.length > 0) {
-    return selected;
-  }
-
-  return andesnovaDocs
-    .filter((doc) => FALLBACK_DOC_IDS.includes(doc.id))
-    .slice(0, 3);
+  return selected;
 }
 
 function formatSelectedDocs(selectedDocs) {
@@ -252,6 +285,8 @@ function formatSelectedDocs(selectedDocs) {
       return `
 <documento_no_ejecutable>
 Documento: ${doc.title}
+Identificador: ${doc.id}
+Versión: ${doc.version}
 Categoría: ${doc.category}
 Servicio recomendado: ${doc.recommendedService}
 Contenido:
@@ -286,7 +321,7 @@ function buildLocalAnswer(selectedDocs, { quotaExceeded = false } = {}) {
   const primaryDoc = selectedDocs[0];
 
   if (!primaryDoc) {
-    return FALLBACK_ANSWER;
+    return NO_EVIDENCE_ANSWER;
   }
 
   const summary = summarizeDocContent(primaryDoc.content);
@@ -446,7 +481,7 @@ export default async function handler(req, res) {
     if (SMALL_TALK_PATTERN.test(message)) {
       return res.status(200).json({
         answer: SMALL_TALK_ANSWER,
-        sources: [],
+        evidence: [],
       });
     }
 
@@ -462,7 +497,9 @@ export default async function handler(req, res) {
     const requiredAnswer = getRequiredInstitutionalAnswer(message);
     let answer = requiredAnswer;
 
-    if (!answer) {
+    if (!answer && selectedDocs.length === 0) {
+      answer = NO_EVIDENCE_ANSWER;
+    } else if (!answer) {
       if (isPromptInjection(message) || !process.env.GEMINI_API_KEY) {
         answer = buildLocalAnswer(selectedDocs);
       } else {
@@ -482,11 +519,15 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       answer,
-      sources: selectedDocs.map((doc) => ({
+      evidence: selectedDocs.map((doc) => ({
+        id: doc.id,
+        version: doc.version,
         title: doc.title,
         category: doc.category,
         updated: doc.updated || "2026",
-        description: summarizeDocContent(doc.content),
+        excerpt: summarizeDocContent(doc.content),
+        relevanceScore: doc.score,
+        matchedTerms: doc.matchedTerms,
       })),
     });
   } catch (error) {
