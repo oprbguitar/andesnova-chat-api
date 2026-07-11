@@ -1,6 +1,6 @@
 # AndesNova Chat API
 
-Backend serverless de Vercel para el chatbot empresarial AndesNova IA+ del portal AndesNova Consultores S.A.C.
+Backend serverless de Vercel para el chatbot empresarial AndesNova IA+ del portal AndesNova.
 Las respuestas se generan con documentacion interna estructurada del backend, seleccionando solo los documentos mas relevantes para cada consulta.
 
 Production URL:

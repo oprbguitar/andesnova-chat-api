@@ -12,15 +12,19 @@ export const andesnovaDocs = [
       "servicios",
       "quienes son",
       "que hacen",
+      "como se describe",
+      "quien presta",
+      "quien ejecuta",
+      "aliados",
     ],
     recommendedService: "Orientacion inicial AndesNova",
     suggestedNextStep:
       "Solicitar una evaluacion inicial para identificar el problema principal y el servicio mas adecuado.",
     content: `
-      AndesNova Consultores S.A.C. es una empresa ficticia de consultoria empresarial creada para demostracion comercial.
-      Orienta a organizaciones en gestion documental, mejora administrativa, procesos, SST, logistica, cumplimiento
-      documental, tecnologia documental, IA, reportes, dashboards y capacitacion empresarial. Su enfoque es practico:
-      entender el caso del cliente, ordenar la informacion disponible y proponer un camino de trabajo claro.
+      AndesNova brinda servicios de diagnóstico, organización y mejora empresarial, combinando gestión documental,
+      optimización de procesos, análisis de datos y soluciones tecnológicas adaptadas a cada organización.
+      Los servicios son ejecutados directamente por consultores especializados y, cuando el proyecto lo requiere,
+      mediante profesionales o empresas aliadas. La atención de proyectos está sujeta a evaluación previa.
     `,
   },
   {
