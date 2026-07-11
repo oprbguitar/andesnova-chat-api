@@ -122,43 +122,6 @@ async function sendLeadEmail(lead, origin) {
   }
 }
 
-async function sendLeadWithFormSubmit(lead, origin) {
-  const recipient = process.env.LEAD_FORWARD || "consultas@andesnova.solutions";
-  const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
-      _subject: `Nuevo prospecto: ${lead.name}${lead.company ? ` (${lead.company})` : ""}`,
-      _template: "table",
-      nombre: lead.name,
-      empresa: lead.company || "No indicada",
-      correo: lead.email,
-      telefono: lead.phone || "No indicado",
-      mensaje: lead.message || "(sin mensaje adicional)",
-      resumen: lead.summary || "(sin diagnóstico adjunto)",
-      origen: origin || "desconocido",
-      consentimiento: "Aceptado",
-    }),
-  });
-
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    console.error("FormSubmit request failed:", response.status, detail.slice(0, 300));
-    throw new Error(`FormSubmit request failed with ${response.status}`);
-  }
-}
-
-async function deliverLead(lead, origin) {
-  if (process.env.RESEND_API_KEY) {
-    return sendLeadEmail(lead, origin);
-  }
-
-  return sendLeadWithFormSubmit(lead, origin);
-}
-
 export default async function handler(req, res) {
   const origin = req.headers.origin || "";
   setCorsHeaders(res, origin);
@@ -166,6 +129,10 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  if (!process.env.RESEND_API_KEY) {
+    return res.status(503).json({ error: "Lead service not configured" });
   }
 
   const ip =
@@ -189,11 +156,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    await deliverLead(lead, origin);
-    return res.status(200).json({
-      ok: true,
-      provider: process.env.RESEND_API_KEY ? "resend" : "formsubmit",
-    });
+    await sendLeadEmail(lead, origin);
+    return res.status(200).json({ ok: true, provider: "resend" });
   } catch (error) {
     console.error("Lead delivery failed:", error.message);
     return res.status(502).json({ error: "Lead delivery failed" });
