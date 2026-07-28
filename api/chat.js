@@ -164,6 +164,23 @@ export function getProjectGuidance(message) {
     : "";
 }
 
+export function ensurePortfolioContactGuidance(answer, selectedDocs) {
+  let completed = String(answer || "").trim();
+  const usesPortfolio = selectedDocs.some((doc) => doc.id === "portafolio-proyectos");
+
+  if (!usesPortfolio) {
+    return completed;
+  }
+  if (!completed.includes(PROJECTS_URL)) {
+    completed += `\n\nRevisa el portafolio en ${PROJECTS_URL}`;
+  }
+  if (!completed.toLowerCase().includes(CONTACT_EMAIL)) {
+    completed += `\nSi requieres una consulta adicional, solicítala en ${CONTACT_EMAIL}.`;
+  }
+
+  return completed;
+}
+
 export function isPromptInjection(message) {
   return INJECTION_PATTERN.test(message);
 }
@@ -586,6 +603,7 @@ export default async function handler(req, res) {
       }
     }
 
+    answer = ensurePortfolioContactGuidance(answer, selectedDocs);
     answer = validateModelOutput(answer);
 
     return res.status(200).json({

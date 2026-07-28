@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import handler, {
   ASSISTANT_BEHAVIOR,
   buildContextPrompt,
+  ensurePortfolioContactGuidance,
   getProjectGuidance,
   getRequiredInstitutionalAnswer,
   isPromptInjection,
@@ -85,6 +86,15 @@ test("reserva IA avanzada para consultas complejas", () => {
 test("la respuesta local relaciona necesidades conocidas con proyectos reales", () => {
   assert.match(getProjectGuidance("Necesito ordenar mi IPERC y los riesgos SST"), /Matriz IPERC Digital \(disponible\)/);
   assert.match(getProjectGuidance("Busco clasificación documental con Archiv-IA"), /Archiv-IA \(próximamente\)/);
+});
+
+test("garantiza enlace y correo cuando la respuesta usa el portafolio", () => {
+  const completed = ensurePortfolioContactGuidance(
+    "ERP Express Perú es la opción relacionada.",
+    [{ id: "portafolio-proyectos" }],
+  );
+  assert.match(completed, /https:\/\/www\.andesnova\.solutions\/proyectos\//);
+  assert.match(completed, /consultas@andesnova\.solutions/);
 });
 
 test("las consultas complejas invocan el modelo avanzado", async () => {
