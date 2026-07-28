@@ -144,7 +144,7 @@ test("las consultas complejas invocan el modelo avanzado", async () => {
     await handler(req, res);
     assert.equal(responseState.status, 200);
     assert.equal(responseState.body?.mode, "advanced");
-    assert.match(requestedUrl, /gemini-2\.5-pro:generateContent/);
+    assert.match(requestedUrl, /gemini-2\.5-flash:generateContent/);
     assert.equal(requestBody?.generationConfig?.thinkingConfig?.thinkingBudget, 2048);
     assert.equal(requestBody?.generationConfig?.maxOutputTokens, 2500);
   } finally {
