@@ -59,6 +59,48 @@ export const andesnovaDocs = [
     `,
   },
   {
+    id: "portafolio-proyectos",
+    title: "Portafolio público de proyectos AndesNova",
+    category: "Proyectos",
+    updated: "jul 2026",
+    version: "1.0.0",
+    keywords: [
+      "proyecto",
+      "proyectos",
+      "portafolio",
+      "solucion disponible",
+      "archiv ia",
+      "justipenal",
+      "radar norma watch",
+      "monitoreo normativo",
+      "matriz iperc",
+      "sst",
+      "visor presupuesto",
+      "presupuesto publico",
+      "erp express",
+      "gestion empresarial",
+      "observatorio ia",
+      "tendencias ia",
+      "gestor docs",
+      "atlas territorial",
+      "geoespacial",
+    ],
+    recommendedService: "Orientación hacia el proyecto del portafolio más relacionado con la necesidad",
+    suggestedNextStep:
+      "Revisar https://www.andesnova.solutions/proyectos/ y, si se requiere una consulta adicional, escribir a consultas@andesnova.solutions.",
+    content: `
+      El portafolio público se consulta en https://www.andesnova.solutions/proyectos/.
+      Proyectos con acceso público: JustiPenal (gestión legal), Radar Norma Watch (monitoreo normativo),
+      Matriz IPERC Digital (riesgos y SST), Visor Presupuesto Peru (presupuesto público),
+      ERP Express Perú (gestión empresarial) y Observatorio IA (tendencias de inteligencia artificial).
+      Proyectos marcados como Próximamente: Archiv-IA (clasificación documental), Gestor Docs (documentos)
+      y Atlas Territorial (soluciones geoespaciales). El asistente debe relacionar la necesidad descrita con
+      el proyecto más cercano, aclarar cuando un proyecto está próximo a publicarse y dirigir al portafolio
+      para revisar sus accesos. Si la persona necesita una evaluación, una propuesta o una consulta adicional,
+      debe indicarse el correo consultas@andesnova.solutions.
+    `,
+  },
+  {
     id: "mejora-procesos",
     title: "Mejora de procesos",
     category: "Servicio",

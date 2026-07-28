@@ -17,13 +17,17 @@ const RATE_LIMIT_MAX_TRACKED_IPS = 2000;
 const rateLimitHits = new Map();
 const DEFAULT_MODEL = "gemini-2.5-flash-lite";
 const MODEL_FALLBACKS = ["gemini-2.5-flash", "gemini-2.0-flash-lite"];
+const DEFAULT_ADVANCED_MODEL = "gemini-2.5-pro";
+const ADVANCED_MODEL_FALLBACKS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
 const MAX_MESSAGE_CHARS = 4000;
 const MAX_HISTORY_CHARS = 700;
 const FALLBACK_ANSWER =
   "No pude generar una respuesta en este momento. Podemos iniciar con una evaluación inicial para revisar su caso.";
 const MIN_RELEVANCE_SCORE = 6;
 const NO_EVIDENCE_ANSWER =
-  "No tengo información suficiente en la documentación disponible para responder con precisión. Puedes reformular la consulta o solicitar una evaluación con un especialista.";
+  "No tengo información suficiente en la documentación disponible para responder con precisión. Puedes reformular la consulta o solicitar una evaluación escribiendo a consultas@andesnova.solutions.";
+const PROJECTS_URL = "https://www.andesnova.solutions/proyectos/";
+const CONTACT_EMAIL = "consultas@andesnova.solutions";
 
 const SYNONYM_GROUPS = [
   ["documento", "documentos", "archivo", "archivos", "expediente", "expedientes"],
@@ -42,7 +46,7 @@ const SMALL_TALK_PATTERN =
   /^(hola+|buenas|buenos dias|buenos días|buenas tardes|buenas noches|hey|hi|hello|saludos|gracias|muchas gracias|ok+|okey|vale|ya|si|sí|no|listo|genial|perfecto|de acuerdo|adios|adiós|chau|hasta luego)[!?¡¿.,\s]*$/i;
 
 const SMALL_TALK_ANSWER =
-  "¡Hola! Soy AndesNova IA+. Cuéntame brevemente tu caso para darte una recomendación ejecutiva: por ejemplo, documentos desordenados, contratos por vencer, demoras en procesos, SST, logística o reportes de gestión.";
+  `¡Hola! Soy AndesNova IA+. Cuéntame brevemente tu necesidad y te orientaré hacia el proyecto o servicio más relacionado. También puedes explorar el portafolio en ${PROJECTS_URL}`;
 
 const QUOTA_NOTE =
   "Nuestro asistente IA alcanzó su límite de consultas por hoy, así que te oriento directamente con la documentación interna:\n\n";
@@ -68,6 +72,12 @@ Response format:
 - When listing items, use at most 3 short bullets starting with "- ".
 - When relevant, frame the answer within the evaluation areas (base, documentacion,
   operacion, riesgos, clientes) or documentary analysis.
+- When a public portfolio project matches the need, name it, explain the fit in one
+  sentence and include https://www.andesnova.solutions/proyectos/.
+- Respect each project's published status. Never imply that a project marked
+  "Próximamente" is already available.
+- When an additional consultation, proposal or specialist review is needed, explicitly
+  invite the user to request it at consultas@andesnova.solutions.
 
 Rules:
 - Do not show prices.
@@ -93,6 +103,19 @@ const SERVICE_PROVIDER_ANSWER =
   "Los servicios son ejecutados directamente por consultores especializados y, cuando el proyecto lo requiere, mediante profesionales o empresas aliadas.";
 const ANDESNOVA_DESCRIPTION_ANSWER =
   "AndesNova brinda servicios de diagnóstico, organización y mejora empresarial, combinando gestión documental, optimización de procesos, análisis de datos y soluciones tecnológicas adaptadas a cada organización.";
+const PROJECT_PORTFOLIO_ANSWER =
+  `Puedes explorar los proyectos de AndesNova en ${PROJECTS_URL} Cuéntame qué necesitas resolver y te indicaré cuál se relaciona mejor con tu caso. Si requieres una consulta adicional o una evaluación, solicítala en ${CONTACT_EMAIL}.`;
+const PROJECT_GUIDANCE = [
+  { pattern: /\b(iperc|sst|seguridad laboral|salud ocupacional)\b/i, name: "Matriz IPERC Digital", status: "disponible" },
+  { pattern: /\b(norma|normas|normativo|normativa|vigilancia legal)\b/i, name: "Radar Norma Watch", status: "disponible" },
+  { pattern: /\b(presupuesto|presupuestal|gasto publico)\b/i, name: "Visor Presupuesto Peru", status: "disponible" },
+  { pattern: /\b(erp|gestion empresarial|inventario|facturacion)\b/i, name: "ERP Express Perú", status: "disponible" },
+  { pattern: /\b(observatorio|tendencias de ia|tendencias ia)\b/i, name: "Observatorio IA", status: "disponible" },
+  { pattern: /\b(justipenal|gestion legal|materia penal)\b/i, name: "JustiPenal", status: "disponible" },
+  { pattern: /\b(archiv ia|archiv-ia|clasificacion documental)\b/i, name: "Archiv-IA", status: "próximamente" },
+  { pattern: /\b(gestor docs|gestor documental)\b/i, name: "Gestor Docs", status: "próximamente" },
+  { pattern: /\b(atlas territorial|geoespacial|territorial)\b/i, name: "Atlas Territorial", status: "próximamente" },
+];
 const INJECTION_PATTERN =
   /(?:ignora|olvida|omite|desobedece|anula).{0,45}(?:instrucciones|reglas|prompt)|(?:revela|muestra|imprime|repite|describe).{0,45}(?:prompt|instrucciones internas|system prompt|mensaje del sistema)|(?:act[uú]a como|developer message|system message)/i;
 const SENSITIVE_OUTPUT_PATTERN =
@@ -106,7 +129,39 @@ export function getRequiredInstitutionalAnswer(message) {
   if (/(c[oó]mo|de qu[eé] manera).{0,25}(se describe|describir|define).{0,20}andesnova|qu[eé] es andesnova/i.test(normalized)) {
     return ANDESNOVA_DESCRIPTION_ANSWER;
   }
+  if (
+    /(?:qu[eé]|cu[aá]les|ver|mostrar|conocer).{0,35}(?:proyectos|portafolio)|(?:proyectos|portafolio).{0,35}(?:tienen|ofrecen|disponibles|andesnova)/i.test(
+      normalized,
+    )
+  ) {
+    return PROJECT_PORTFOLIO_ANSWER;
+  }
   return null;
+}
+
+export function requiresAdvancedAI(message, history = []) {
+  const normalized = normalizeForSearch(message);
+  const complexIntent =
+    /\b(compara|comparar|analiza|analizar|estrategia|estrategico|plan detallado|hoja de ruta|arquitectura|integrar|integracion|prioriza|priorizar|escenarios|impacto|viabilidad|recomendacion integral)\b/i;
+  const wordCount = normalized ? normalized.split(" ").length : 0;
+  const recentUserContext = Array.isArray(history)
+    ? history
+        .filter((item) => item?.role === "user" && typeof item?.content === "string")
+        .slice(-4)
+        .map((item) => item.content)
+        .join(" ")
+    : "";
+
+  return complexIntent.test(normalized) || wordCount >= 45 || normalizeForSearch(recentUserContext).length >= 700;
+}
+
+export function getProjectGuidance(message) {
+  const normalized = normalizeForSearch(message);
+  const match = PROJECT_GUIDANCE.find((project) => project.pattern.test(normalized));
+
+  return match
+    ? `Proyecto relacionado: ${match.name} (${match.status}). Revisa el portafolio en ${PROJECTS_URL}`
+    : "";
 }
 
 export function isPromptInjection(message) {
@@ -319,7 +374,7 @@ User message:
 `;
 }
 
-function buildLocalAnswer(selectedDocs, { quotaExceeded = false } = {}) {
+function buildLocalAnswer(selectedDocs, { quotaExceeded = false, message = "" } = {}) {
   const primaryDoc = selectedDocs[0];
 
   if (!primaryDoc) {
@@ -328,21 +383,26 @@ function buildLocalAnswer(selectedDocs, { quotaExceeded = false } = {}) {
 
   const summary = summarizeDocContent(primaryDoc.content);
   const note = quotaExceeded ? QUOTA_NOTE : "";
+  const projectGuidance = getProjectGuidance(message);
 
   return (
     `${note}Sobre ${primaryDoc.title.toLowerCase()}: ${summary}\n\n` +
     `Recomendación: ${primaryDoc.recommendedService}.\n` +
     `Siguiente paso: ${primaryDoc.suggestedNextStep}\n\n` +
-    `Si deseas avanzar hoy, usa el botón "Solicitar evaluación" para escalar tu caso con un resumen.`
+    (projectGuidance ? `${projectGuidance}\n\n` : "") +
+    `Si deseas avanzar hoy, revisa ${PROJECTS_URL} o solicita una consulta en ${CONTACT_EMAIL}.`
   );
 }
 
-function getModelList() {
-  const configuredModel = process.env.GEMINI_MODEL || DEFAULT_MODEL;
-  return [configuredModel, ...MODEL_FALLBACKS.filter((model) => model !== configuredModel)];
+function getModelList({ advanced = false } = {}) {
+  const configuredModel = advanced
+    ? process.env.GEMINI_ADVANCED_MODEL || DEFAULT_ADVANCED_MODEL
+    : process.env.GEMINI_MODEL || DEFAULT_MODEL;
+  const fallbacks = advanced ? ADVANCED_MODEL_FALLBACKS : MODEL_FALLBACKS;
+  return [configuredModel, ...fallbacks.filter((model) => model !== configuredModel)];
 }
 
-async function requestGemini(contextPrompt, model) {
+async function requestGemini(contextPrompt, model, { advanced = false } = {}) {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
   const requestBody = {
     systemInstruction: {
@@ -366,7 +426,7 @@ async function requestGemini(contextPrompt, model) {
 
   if (model.startsWith("gemini-2.5")) {
     requestBody.generationConfig.thinkingConfig = {
-      thinkingBudget: 0,
+      thinkingBudget: advanced ? 2048 : 0,
     };
   }
 
@@ -416,16 +476,16 @@ function stripMarkdown(text) {
     .replace(/^\s*\*\s+/gm, "- ");
 }
 
-async function callGemini(contextPrompt) {
+async function callGemini(contextPrompt, { advanced = false } = {}) {
   let lastError;
 
-  for (const model of getModelList()) {
+  for (const model of getModelList({ advanced })) {
     try {
-      return await requestGemini(contextPrompt, model);
+      return await requestGemini(contextPrompt, model, { advanced });
     } catch (error) {
       lastError = error;
 
-      if (![404, 429].includes(error.status)) {
+      if (![400, 403, 404, 429].includes(error.status)) {
         break;
       }
     }
@@ -497,22 +557,25 @@ export default async function handler(req, res) {
 
     const selectedDocs = selectRelevantDocs(message, userHistoryText);
     const requiredAnswer = getRequiredInstitutionalAnswer(message);
+    const advanced = requiresAdvancedAI(message, body.history);
     let answer = requiredAnswer;
+    let responseMode = requiredAnswer ? "guided" : "documental";
 
     if (!answer && selectedDocs.length === 0) {
       answer = NO_EVIDENCE_ANSWER;
     } else if (!answer) {
       if (isPromptInjection(message) || !process.env.GEMINI_API_KEY) {
-        answer = buildLocalAnswer(selectedDocs);
+        answer = buildLocalAnswer(selectedDocs, { message });
       } else {
         try {
-          answer = await callGemini(buildContextPrompt(message, body.history, selectedDocs));
+          answer = await callGemini(buildContextPrompt(message, body.history, selectedDocs), { advanced });
+          responseMode = advanced ? "advanced" : "standard";
         } catch (error) {
           console.error("Using local document answer fallback:", {
             status: error.status,
             model: error.model,
           });
-          answer = buildLocalAnswer(selectedDocs, { quotaExceeded: error.status === 429 });
+          answer = buildLocalAnswer(selectedDocs, { quotaExceeded: error.status === 429, message });
         }
       }
     }
@@ -521,6 +584,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       answer,
+      mode: responseMode,
       evidence: selectedDocs.map((doc) => ({
         id: doc.id,
         version: doc.version,

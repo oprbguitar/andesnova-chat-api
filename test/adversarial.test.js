@@ -1,11 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
+import handler, {
   ASSISTANT_BEHAVIOR,
   buildContextPrompt,
+  getProjectGuidance,
   getRequiredInstitutionalAnswer,
   isPromptInjection,
   normalizeForSearch,
+  requiresAdvancedAI,
   selectRelevantDocs,
   validateModelOutput,
 } from "../api/chat.js";
@@ -59,4 +61,84 @@ test("cada documento recuperado expone identificador y version", () => {
   assert.ok(docs.length > 0);
   assert.equal(typeof docs[0].id, "string");
   assert.equal(typeof docs[0].version, "string");
+});
+
+test("orienta las consultas sobre proyectos hacia el portafolio y el correo", () => {
+  const answer = getRequiredInstitutionalAnswer("¿Qué proyectos tiene AndesNova?") || "";
+  assert.match(answer, /https:\/\/www\.andesnova\.solutions\/proyectos\//);
+  assert.match(answer, /consultas@andesnova\.solutions/);
+});
+
+test("recupera proyectos relacionados con necesidades del portafolio", () => {
+  const docs = selectRelevantDocs("Busco un proyecto para riesgos SST y una matriz IPERC");
+  assert.equal(docs.some((doc) => doc.id === "portafolio-proyectos"), true);
+});
+
+test("reserva IA avanzada para consultas complejas", () => {
+  assert.equal(requiresAdvancedAI("¿Qué proyectos tienen?"), false);
+  assert.equal(
+    requiresAdvancedAI("Compara ERP Express Perú con otras opciones y crea una hoja de ruta de integración"),
+    true,
+  );
+});
+
+test("la respuesta local relaciona necesidades conocidas con proyectos reales", () => {
+  assert.match(getProjectGuidance("Necesito ordenar mi IPERC y los riesgos SST"), /Matriz IPERC Digital \(disponible\)/);
+  assert.match(getProjectGuidance("Busco clasificación documental con Archiv-IA"), /Archiv-IA \(próximamente\)/);
+});
+
+test("las consultas complejas invocan el modelo avanzado", async () => {
+  const previousKey = process.env.GEMINI_API_KEY;
+  const previousFetch = globalThis.fetch;
+  let requestedUrl = "";
+  let requestBody;
+
+  process.env.GEMINI_API_KEY = "test-key";
+  globalThis.fetch = async (url, options) => {
+    requestedUrl = String(url);
+    requestBody = JSON.parse(options.body);
+    return {
+      ok: true,
+      status: 200,
+      async json() {
+        return {
+          candidates: [{ content: { parts: [{ text: "Recomendación avanzada basada en el portafolio." }] } }],
+        };
+      },
+    };
+  };
+
+  const responseState = { status: 200, body: null };
+  const req = {
+    method: "POST",
+    headers: { origin: "https://www.andesnova.solutions", "x-forwarded-for": "advanced-test" },
+    body: {
+      message: "Compara ERP Express Perú con otras opciones y crea una hoja de ruta de integración",
+      history: [],
+    },
+    socket: {},
+  };
+  const res = {
+    setHeader() {},
+    status(code) {
+      responseState.status = code;
+      return this;
+    },
+    json(body) {
+      responseState.body = body;
+      return body;
+    },
+  };
+
+  try {
+    await handler(req, res);
+    assert.equal(responseState.status, 200);
+    assert.equal(responseState.body?.mode, "advanced");
+    assert.match(requestedUrl, /gemini-2\.5-pro:generateContent/);
+    assert.equal(requestBody?.generationConfig?.thinkingConfig?.thinkingBudget, 2048);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousKey === undefined) delete process.env.GEMINI_API_KEY;
+    else process.env.GEMINI_API_KEY = previousKey;
+  }
 });
