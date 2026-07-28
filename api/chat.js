@@ -385,12 +385,18 @@ function buildLocalAnswer(selectedDocs, { quotaExceeded = false, message = "" } 
   const note = quotaExceeded ? QUOTA_NOTE : "";
   const projectGuidance = getProjectGuidance(message);
 
+  if (projectGuidance) {
+    return (
+      `${note}${projectGuidance}\n\n` +
+      `Este proyecto es el más cercano a la necesidad descrita según el portafolio público. ` +
+      `Si requieres revisar el alcance o solicitar una evaluación adicional, escribe a ${CONTACT_EMAIL}.`
+    );
+  }
+
   return (
-    `${note}Sobre ${primaryDoc.title.toLowerCase()}: ${summary}\n\n` +
-    `Recomendación: ${primaryDoc.recommendedService}.\n` +
-    `Siguiente paso: ${primaryDoc.suggestedNextStep}\n\n` +
-    (projectGuidance ? `${projectGuidance}\n\n` : "") +
-    `Si deseas avanzar hoy, revisa ${PROJECTS_URL} o solicita una consulta en ${CONTACT_EMAIL}.`
+    `${note}El enfoque recomendado es ${primaryDoc.recommendedService}: ${summary}\n\n` +
+    `Siguiente paso: ${primaryDoc.suggestedNextStep} ` +
+    `Si necesitas ampliar la consulta, escribe a ${CONTACT_EMAIL}.`
   );
 }
 
@@ -420,7 +426,7 @@ async function requestGemini(contextPrompt, model, { advanced = false } = {}) {
     ],
     generationConfig: {
       temperature: 0.3,
-      maxOutputTokens: 260,
+      maxOutputTokens: advanced ? 2500 : 260,
     },
   };
 

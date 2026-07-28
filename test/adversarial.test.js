@@ -136,6 +136,7 @@ test("las consultas complejas invocan el modelo avanzado", async () => {
     assert.equal(responseState.body?.mode, "advanced");
     assert.match(requestedUrl, /gemini-2\.5-pro:generateContent/);
     assert.equal(requestBody?.generationConfig?.thinkingConfig?.thinkingBudget, 2048);
+    assert.equal(requestBody?.generationConfig?.maxOutputTokens, 2500);
   } finally {
     globalThis.fetch = previousFetch;
     if (previousKey === undefined) delete process.env.GEMINI_API_KEY;
